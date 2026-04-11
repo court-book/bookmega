@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>MEGA výběr 😏</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .item {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .item:hover {
+      transform: scale(1.05);
+    }
+
+    img {
+      width: 220px;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    .selected {
+      box-shadow: 0 0 20px gold;
+    }
+
+    button {
+      margin: 15px;
+      padding: 10px 20px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: white;
+    }
+
+    button:hover {
+      background: #555;
+    }
+
+    .bracket {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+
+    .round {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .match {
+      background: #222;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      width: 180px;
+    }
+
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player img {
+      width: 40px;
+      height: 50px;
+    }
+
+    .winner {
+      border: 2px solid gold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Koho radši? 😏</h1>
+
+<div class="container" id="game">
+  <div class="item" id="item0" onclick="choose(0)">
+    <img id="img0"><p id="name0"></p>
+  </div>
+
+  <div class="item" id="item1" onclick="choose(1)">
+    <img id="img1"><p id="name1"></p>
+  </div>
+</div>
+
+<button id="skipBtn" onclick="skip()">Přeskočit (3)</button>
+
+<script>
+
+// 🔥 MEGA seznam
+const files = [
+  "Aelin.jpg","Amren.jpg","Asterin.jpg","Azriel.jpg","Bryce.jpg","Cardan.jpg",
+  "Cassian.jpg","Danika.jpg","Dorian.jpg","Elain.jpg","Elide.jpg","Feyre.jpg",
+  "Gwyn.jpg","Hunt.jpg","Hypaxia.jpg","Chaol.jpg","Juniper.jpg","Kai_Azer.jpg",
+  "Kaltain.jpg","Kingfisher.jpg","Kitt_Azer.jpg","Lehabah.jpg","Liam.jpg",
+  "Lidia.jpg","Lorcan.jpg","Lucien.jpg","Luther.jpg","Lysandra.jpg","Manon.jpg",
+  "Maeve.jpg","Morrigan.jpg","Nesryn.jpg","Nesta.jpg","Paedyn.jpg","Rhiannon.jpg",
+  "Rhys.jpg","Rowan.jpg","Ruhn.jpg","Saeris.jpg","Samkiel.jpg","Tamlin.jpg",
+  "Taran.jpg","Tharion.jpg","Violet.jpg","Xaden.jpg","Yrene.jpg"
+];
+
+// vytvoření dat
+let data = files.map(file => ({
+  name: file.replace(/\.[^/.]+$/, "").replace(/_/g, " "),
+  img: `images/${file}`
+}));
+
+let currentRound = shuffle([...data]);
+let nextRound = [];
+let currentPair = [];
+let rounds = [];
+let currentRoundMatches = [];
+let skipsLeft = 3;
+
+// shuffle
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+// další dvojice
+function nextPair() {
+  if (currentRound.length === 1 && nextRound.length === 0) {
+    if (currentRoundMatches.length > 0) rounds.push(currentRoundMatches);
+    showWinner(currentRound[0]);
+    return;
+  }
+
+  if (currentRound.length < 2) {
+    rounds.push(currentRoundMatches);
+    currentRoundMatches = [];
+    currentRound = nextRound;
+    nextRound = [];
+    nextPair();
+    return;
+  }
+
+  currentPair = [currentRound.pop(), currentRound.pop()];
+  update();
+}
+
+// update UI
+function update() {
+  document.getElementById("img0").src = currentPair[0].img;
+  document.getElementById("name0").innerText = currentPair[0].name;
+
+  document.getElementById("img1").src = currentPair[1].img;
+  document.getElementById("name1").innerText = currentPair[1].name;
+}
+
+// výběr
+function choose(index) {
+  let winner = currentPair[index];
+
+  document.getElementById("item" + index).classList.add("selected");
+
+  setTimeout(() => {
+    document.getElementById("item" + index).classList.remove("selected");
+
+    currentRoundMatches.push({
+      p1: currentPair[0].name,
+      p2: currentPair[1].name,
+      winner: winner.name
+    });
+
+    nextRound.push(winner);
+    nextPair();
+  }, 200);
+}
+
+// skip (max 3×)
+function skip() {
+  if (skipsLeft <= 0) return;
+
+  skipsLeft--;
+
+  currentRoundMatches.push({
+    p1: currentPair[0].name,
+    p2: currentPair[1].name,
+    winner: "SKIP"
+  });
+
+  document.getElementById("skipBtn").innerText = `Přeskočit (${skipsLeft})`;
+
+  nextPair();
+}
+
+// vítěz + pavouk
+function showWinner(winner) {
+  let html = `<div class="bracket">`;
+
+  rounds.forEach(round => {
+    html += `<div class="round">`;
+    round.forEach(match => {
+
+      let p1 = data.find(p => p.name === match.p1);
+      let p2 = data.find(p => p.name === match.p2);
+
+      html += `
+        <div class="match">
+          <div class="player ${match.winner===match.p1?"winner":""}">
+            <img src="${p1.img}">${p1.name}
+          </div>
+          <div class="player ${match.winner===match.p2?"winner":""}">
+            <img src="${p2.img}">${p2.name}
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+
+  document.body.innerHTML = `
+    <h1>👑 ${winner.name} 👑</h1>
+    <img src="${winner.img}" style="width:250px; border-radius:12px;">
+    ${html}
+    <br><button onclick="location.reload()">Znovu</button>
+  `;
+}
+
+// start hned
+nextPair();
+
+</script>
+
+</body>
+</html>
